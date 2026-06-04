@@ -7,33 +7,35 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  name          String?
-  password      String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relationships
-  transactions  Transaction[]
-  budgets       Budget[]
-  savingsGoals  SavingsGoal[]
+  transactions Transaction[]
+  budgets      Budget[]
+  savingsGoals SavingsGoal[]
+
+  recurringTransactions RecurringTransaction[]
 }
 
 model Transaction {
-  id          String           @id @default(uuid())
-  title       String
-  amount      Float
-  type        TransactionType
-  category    String
-  date        DateTime         @default(now())
-  note        String?
-  
-  // Relationship to User
-  userId      String
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String          @id @default(uuid())
+  title    String
+  amount   Float
+  type     TransactionType
+  category String
+  date     DateTime        @default(now())
+  note     String?
 
-  createdAt   DateTime         @default(now())
+  // Relationship to User
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }
 
 enum TransactionType {
@@ -42,30 +44,52 @@ enum TransactionType {
 }
 
 model Budget {
-  id          String   @id @default(uuid())
-  category    String
-  amount      Float
-  period      String
-  
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  category String
+  amount   Float
+  period   String
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, category, period])
 }
 
 model SavingsGoal {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   name          String
   targetAmount  Float
-  currentAmount Float    @default(0)
+  currentAmount Float     @default(0)
   deadline      DateTime?
-  
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model RecurringTransaction {
+  id        String          @id @default(uuid())
+  userId    String
+  title     String
+  amount    Float
+  type      TransactionType
+  category  String?
+  frequency Frequency
+  nextRun   DateTime
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }

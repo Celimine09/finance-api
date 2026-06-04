@@ -1,19 +1,38 @@
 import { Router } from "express";
 import * as TransactionController from "../controllers/transaction.controller";
+import { requireAuth } from "../middlewares/auth.middleware";
+import {
+  createTransactionSchema,
+  updateTransactionSchema,
+} from "../validators/transaction.validator";
+import { validate } from "../middlewares/validate.middleware";
+import { createRecurringTransaction } from "../controllers/transaction.controller";
 
 const router = Router();
+
+// /**
+//  * @swagger
+//  * /api/transactions:
+//  *   get:
+//  *     summary: ดึงข้อมูลรายการธุรกรรมทั้งหมด
+//  *     tags: [Transactions]
+//  *     responses:
+//  *       200:
+//  *         description: คืนค่ารายการธุรกรรมสำเร็จ
+//  */
+// router.get("/", requireAuth, TransactionController.getTransactions);
 
 /**
  * @swagger
  * /api/transactions:
  *   get:
- *     summary: ดึงข้อมูลรายการธุรกรรมทั้งหมด
+ *     summary: ดึงข้อมูลรายการธุรกรรมทั้งหมดของผู้ใช้งานทีนั้นๆ
  *     tags: [Transactions]
  *     responses:
  *       200:
  *         description: คืนค่ารายการธุรกรรมสำเร็จ
  */
-router.get("/", TransactionController.getTransactions);
+router.get("/", requireAuth, TransactionController.getTransactionsByUserId);
 
 /**
  * @swagger
@@ -52,7 +71,12 @@ router.get("/", TransactionController.getTransactions);
  *       400:
  *         description: ข้อมูลไม่ถูกต้อง
  */
-router.post("/", TransactionController.createTransaction);
+router.post(
+  "/",
+  requireAuth,
+  validate(createTransactionSchema),
+  TransactionController.createTransaction,
+);
 /**
  * @swagger
  * /api/transactions/{id}:
@@ -85,7 +109,12 @@ router.post("/", TransactionController.createTransaction);
  *       400:
  *         description: ไม่พบรายการนี้หรือข้อมูลผิดพลาด
  */
-router.patch("/:id", TransactionController.updateTransaction);
+router.patch(
+  "/:id",
+  requireAuth,
+  validate(updateTransactionSchema),
+  TransactionController.updateTransaction,
+);
 
 /**
  * @swagger
@@ -106,6 +135,40 @@ router.patch("/:id", TransactionController.updateTransaction);
  *       400:
  *         description: ไม่พบรายการนี้
  */
-router.delete("/:id", TransactionController.deleteTransaction);
+router.delete("/:id", requireAuth, TransactionController.deleteTransaction);
+
+/**
+ * @swagger
+ * /api/transactions/summary:
+ *   get:
+ *     summary: ดึงยอดรวมรายรับ รายจ่าย และยอดคงเหลือของผู้ใช้งาน (สำหรับ 3 กล่องบน Dashboard)
+ *     tags: [Transactions]
+ *     responses:
+ *       200:
+ *         description: คืนค่ายอดรวมสำเร็จ
+ */
+router.get(
+  "/summary",
+  requireAuth,
+  TransactionController.getTransactionSummary,
+);
+
+/**
+ * @swagger
+ * /api/transactions/categories:
+ *   get:
+ *     summary: ดึงข้อมูลสรุปรายจ่ายแยกตามหมวดหมู่ (สำหรับกราฟโดนัท)
+ *     tags: [Transactions]
+ *     responses:
+ *       200:
+ *         description: คืนค่าข้อมูลหมวดหมู่สำเร็จ
+ */
+router.get(
+  "/categories",
+  requireAuth,
+  TransactionController.getCategorySummary,
+);
+
+router.post("/recurring", requireAuth, createRecurringTransaction);
 
 export default router;
