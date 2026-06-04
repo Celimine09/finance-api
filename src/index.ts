@@ -8,9 +8,14 @@ import budgetRoutes from "./routes/budget.route";
 import savingRoutes from "./routes/saving.route";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  }),
+);
 app.use(express.json());
 
 app.get("/", (req: Request, res: Response) => {
