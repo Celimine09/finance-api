@@ -28,7 +28,7 @@ export const startCronJobs = () => {
             title: `[Auto] ${rt.title}`,
             amount: rt.amount,
             type: rt.type,
-            category: rt.category || "OTHER",
+            categoryId: rt.categoryId || "OTHER",
             date: now,
           },
         });

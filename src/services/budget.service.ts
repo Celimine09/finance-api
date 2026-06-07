@@ -2,10 +2,10 @@ import prisma from "./prisma.service";
 
 export const createBudget = async (
   userId: string,
-  data: { category: string; amount: number; period: string },
+  data: { categoryId: string; amount: number; period: string },
 ) => {
   const existingBudget = await prisma.budget.findFirst({
-    where: { userId, category: data.category, period: data.period },
+    where: { userId, categoryId: data.categoryId, period: data.period },
   });
 
   if (existingBudget) {
@@ -15,7 +15,7 @@ export const createBudget = async (
   return await prisma.budget.create({
     data: {
       userId,
-      category: data.category,
+      categoryId: data.categoryId,
       amount: data.amount,
       period: data.period,
     },
@@ -25,6 +25,7 @@ export const createBudget = async (
 export const getBudgetsWithUsage = async (userId: string, period: string) => {
   const budgets = await prisma.budget.findMany({
     where: { userId, period },
+    include: { category: true },
   });
 
   const [year, month] = period.split("-");
@@ -40,17 +41,20 @@ export const getBudgetsWithUsage = async (userId: string, period: string) => {
   );
 
   const expenses = await prisma.transaction.groupBy({
-    by: ["category"],
+    by: ["categoryId"],
     where: {
       userId,
       type: "EXPENSE",
       date: { gte: startDate, lt: endDate },
+      categoryId: { not: null },
     },
     _sum: { amount: true },
   });
 
   return budgets.map((budget) => {
-    const actualExpense = expenses.find((e) => e.category === budget.category);
+    const actualExpense = expenses.find(
+      (e) => e.categoryId === budget.categoryId,
+    );
     const spent = actualExpense?._sum.amount || 0;
 
     return {
@@ -58,6 +62,8 @@ export const getBudgetsWithUsage = async (userId: string, period: string) => {
       spent,
       remaining: budget.amount - spent,
       usagePercentage: parseFloat(((spent / budget.amount) * 100).toFixed(2)),
+      categoryName: budget.category?.name || "Unknown",
+      categoryColor: budget.category?.color || "#cbd5e1",
     };
   });
 };

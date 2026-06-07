@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 const createBudgetPayload = z.object({
-  category: z
-    .string({ message: "Category is required" })
-    .min(1, "Category cannot be empty"),
+  categoryId: z
+    .string({ message: "Category ID is required" })
+    .uuid("Category ID must be a valid UUID"),
   amount: z
     .number({ message: "Amount is required" })
     .positive("Amount must be greater than 0"),

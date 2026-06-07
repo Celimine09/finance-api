@@ -29,10 +29,11 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *               category:
+ *               categoryId:
  *                 type: string
+ *                 format: uuid
  *                 description: "หมวดหมู่ที่ต้องการตั้งงบ (ต้องตรงกับ category ใน Transaction)"
- *                 example: "ENTERTAINMENT"
+ *                 example: "123e4567-e89b-12d3-a456-426614174000"
  *               amount:
  *                 type: number
  *                 description: "จำนวนเงินเป้าหมาย"

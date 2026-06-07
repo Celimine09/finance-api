@@ -14,28 +14,28 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relationships
-  transactions Transaction[]
-  budgets      Budget[]
-  savingsGoals SavingsGoal[]
-
+  categories            Category[]
+  transactions          Transaction[]
+  budgets               Budget[]
+  savingsGoals          SavingsGoal[]
   recurringTransactions RecurringTransaction[]
 }
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  color     String
+  type      TransactionType
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-model Transaction {
-  id       String          @id @default(uuid())
-  title    String
-  amount   Float
-  type     TransactionType
-  category String
-  date     DateTime        @default(now())
-  note     String?
-
-  // Relationship to User
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions          Transaction[]
+  budgets               Budget[]
+  recurringTransactions RecurringTransaction[]
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, userId]) // ป้องกันไม่ให้ User สร้างหมวดหมู่ชื่อซ้ำกันเอง
 }
 
 enum TransactionType {
@@ -43,19 +43,38 @@ enum TransactionType {
   EXPENSE
 }
 
+model Transaction {
+  id         String          @id @default(uuid())
+  title      String
+  amount     Float
+  type       TransactionType
+  date       DateTime        @default(now())
+  note       String?
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime  @default(now())
+}
+
 model Budget {
-  id       String @id @default(uuid())
-  category String
-  amount   Float
-  period   String
+  id         String   @id @default(uuid())
+  amount     Float
+  period     String
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, category, period])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, categoryId, period]) // เปลี่ยนมาป้องกันการสร้าง Budget ซ้ำหมวดในเดือนเดียวกัน
 }
 
 model SavingsGoal {
@@ -65,11 +84,11 @@ model SavingsGoal {
   currentAmount Float     @default(0)
   deadline      DateTime?
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 enum Frequency {
@@ -80,16 +99,18 @@ enum Frequency {
 }
 
 model RecurringTransaction {
-  id        String          @id @default(uuid())
-  userId    String
-  title     String
-  amount    Float
-  type      TransactionType
-  category  String?
-  frequency Frequency
-  nextRun   DateTime
-  isActive  Boolean         @default(true)
-  createdAt DateTime        @default(now())
+  id         String          @id @default(uuid())
+  title      String
+  amount     Float
+  type       TransactionType
+  frequency  Frequency
+  nextRun    DateTime
+  isActive   Boolean         @default(true)
+  createdAt  DateTime        @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

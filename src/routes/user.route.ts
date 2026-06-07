@@ -96,4 +96,22 @@ router.post("/login", validate(loginSchema), UserController.loginUser);
  */
 router.patch("/profile", requireAuth, UserController.updateUser);
 
+/**
+ * @swagger
+ * /api/users/profile:
+ *   get:
+ *     summary: ดึงข้อมูลโปรไฟล์ผู้ใช้งาน
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: คืนข้อมูลโปรไฟล์สำเร็จ
+ *       400:
+ *         description: ข้อมูลไม่ถูกต้อง
+ *       401:
+ *         description: ไม่ได้รับอนุญาต (Unauthorized) หรือ Token หมดอายุ
+ */
+router.get("/profile", requireAuth, UserController.getProfile);
+
 export default router;

@@ -4,9 +4,8 @@ import { createBudget, getBudgetsWithUsage } from "../services/budget.service";
 export const createBudgetHandler = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    const { category, amount, period } = req.body;
-
-    await createBudget(userId, { category, amount, period });
+    const { categoryId, amount, period } = req.body;
+    await createBudget(userId, { categoryId, amount, period });
 
     res
       .status(201)
@@ -28,7 +27,6 @@ export const getBudgetsHandler = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
     const currentMonth = new Date().toISOString().slice(0, 7);
     const period = (req.query.period as string) || currentMonth;
-
     const budgets = await getBudgetsWithUsage(userId, period);
 
     res.status(200).json({ status: "success", data: budgets });

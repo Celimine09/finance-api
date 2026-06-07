@@ -10,12 +10,14 @@ const transactionPayload = z.object({
   type: z.enum(["INCOME", "EXPENSE"], {
     message: "Type must be INCOME or EXPENSE",
   }),
-  category: z
-    .string({ message: "Category is required" })
-    .min(1, "Category cannot be empty"),
+  categoryId: z
+    .string({ message: "Category ID is required" })
+    .uuid("Category ID must be a valid UUID"),
   note: z.string().optional(),
   date: z.string().optional(),
 });
 
 export const createTransactionSchema = z.object({ body: transactionPayload });
-export const updateTransactionSchema = z.object({ body: transactionPayload.partial() });
+export const updateTransactionSchema = z.object({
+  body: transactionPayload.partial(),
+});

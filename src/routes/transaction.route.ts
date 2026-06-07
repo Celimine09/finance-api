@@ -56,9 +56,10 @@ router.get("/", requireAuth, TransactionController.getTransactionsByUserId);
  *               type:
  *                 type: string
  *                 example: "EXPENSE"
- *               category:
+ *               categoryId:
  *                 type: string
- *                 example: "Transport"
+ *                 format: uuid
+ *                 example: "123e4567-e89b-12d3-a456-426614174000"
  *               note:
  *                 type: string
  *                 example: "ค่าแท็กซี่กลับบ้านตอนตีสาม"
@@ -77,6 +78,7 @@ router.post(
   validate(createTransactionSchema),
   TransactionController.createTransaction,
 );
+
 /**
  * @swagger
  * /api/transactions/{id}:

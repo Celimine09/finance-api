@@ -1,7 +1,6 @@
 import { Frequency, TransactionType } from "@prisma/client";
 import prisma from "./prisma.service";
 
-// กำหนด Type ของข้อมูลที่รับเข้ามา
 interface CreateRecurringDTO {
   title: string;
   amount: number;
@@ -27,7 +26,7 @@ export const createRecurringTask = async (
       title: data.title,
       amount: data.amount,
       type: data.type,
-      category: data.category,
+      ...(data.category ? { categoryId: data.category } : {}),
       frequency: data.frequency,
       nextRun,
     },

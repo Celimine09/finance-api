@@ -31,14 +31,12 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
     const { email, password } = req.body;
     const result = await UserService.loginUser(email, password);
 
-    res
-      .status(200)
-      .json({
-        status: "success",
-        message: "Login successful",
-        token: result.token,
-        user: result.user,
-      });
+    res.status(200).json({
+      status: "success",
+      message: "Login successful",
+      token: result.token,
+      user: result.user,
+    });
   } catch (error: any) {
     if (error?.message === "INVALID_CREDENTIALS") {
       return res
@@ -66,5 +64,28 @@ export const updateUser = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("PATCH User Error:", error);
     res.status(400).json({ status: "error", message: "Could not update user" });
+  }
+};
+
+export const getProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as { user?: { id: string } }).user?.id;
+    if (!userId || typeof userId !== "string") {
+      return res.status(400).json({
+        status: "error",
+        message: "User ID is required and must be a string",
+      });
+    }
+    const user = await UserService.getUserProfile(userId);
+    res.status(200).json({
+      status: "success",
+      message: "User profile fetched successfully",
+      user: user,
+    });
+  } catch (error) {
+    console.error("GET Profile Error:", error);
+    res
+      .status(400)
+      .json({ status: "error", message: "Could not fetch profile" });
   }
 };

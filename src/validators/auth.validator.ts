@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Payload shape used by controllers (validated via middleware)
 const registerPayload = z.object({
   email: z
     .string({ message: "Email is required" })
@@ -17,7 +16,6 @@ const registerPayload = z.object({
     .min(2, { message: "Name must be at least 2 characters long" }),
 });
 
-// Wrapped schemas — middleware expects an object with `body`, `query`, `params`
 export const registerSchema = z.object({ body: registerPayload });
 
 export const loginSchema = z.object({
