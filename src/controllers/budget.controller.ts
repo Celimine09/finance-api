@@ -1,5 +1,9 @@
 import { type Request, type Response } from "express";
-import { createBudget, getBudgetsWithUsage } from "../services/budget.service";
+import {
+  createBudget,
+  getBudgetsWithUsage,
+  updateBudget,
+} from "../services/budget.service";
 
 export const createBudgetHandler = async (req: Request, res: Response) => {
   try {
@@ -32,6 +36,29 @@ export const getBudgetsHandler = async (req: Request, res: Response) => {
     res.status(200).json({ status: "success", data: budgets });
   } catch (error) {
     console.error("Error fetching budgets:", error);
+    res.status(500).json({ status: "error", message: "Internal server error" });
+  }
+};
+
+export const updateBudgetHandler = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const budgetId = req.params.id as string;
+    const { amount } = req.body;
+
+    await updateBudget(userId, budgetId, { amount });
+
+    res
+      .status(200)
+      .json({ status: "success", message: "Update budget successfully" });
+  } catch (error: any) {
+    if (error?.message === "BUDGET_NOT_FOUND") {
+      return res.status(404).json({
+        status: "error",
+        message: "Budget not found or you don't have permission to edit it",
+      });
+    }
+    console.error("Error updating budget:", error);
     res.status(500).json({ status: "error", message: "Internal server error" });
   }
 };

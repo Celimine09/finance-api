@@ -67,3 +67,22 @@ export const getBudgetsWithUsage = async (userId: string, period: string) => {
     };
   });
 };
+
+export const updateBudget = async (
+  userId: string,
+  budgetId: string,
+  data: { amount: number },
+) => {
+  const existingBudget = await prisma.budget.findFirst({
+    where: { id: budgetId, userId },
+  });
+
+  if (!existingBudget) {
+    throw new Error("BUDGET_NOT_FOUND");
+  }
+
+  return await prisma.budget.update({
+    where: { id: budgetId },
+    data: { amount: data.amount },
+  });
+};

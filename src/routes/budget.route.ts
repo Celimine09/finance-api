@@ -2,6 +2,7 @@ import express from "express";
 import {
   createBudgetHandler,
   getBudgetsHandler,
+  updateBudgetHandler,
 } from "../controllers/budget.controller";
 import { requireAuth } from "../middlewares/auth.middleware";
 
@@ -70,5 +71,39 @@ router.post("/", requireAuth, createBudgetHandler);
  *         description: ดึงข้อมูลสำเร็จพร้อมคำนวณเปอร์เซ็นต์การใช้งาน
  */
 router.get("/", requireAuth, getBudgetsHandler);
+
+/**
+ * @swagger
+ * /api/budgets/{id}:
+ *   put:
+ *     summary: แก้ไขจำนวนเงินงบประมาณ
+ *     tags: [Budgets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID ของงบประมาณที่ต้องการแก้ไข
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               amount:
+ *                 type: number
+ *                 description: จำนวนเงินเป้าหมายใหม่
+ *                 example: 6000
+ *     responses:
+ *       200:
+ *         description: แก้ไขงบประมาณสำเร็จ
+ *       404:
+ *         description: ไม่พบงบประมาณ หรือไม่มีสิทธิ์แก้ไข
+ */
+router.put("/:id", requireAuth, updateBudgetHandler);
 
 export default router;
