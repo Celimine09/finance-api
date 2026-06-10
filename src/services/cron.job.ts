@@ -1,59 +1,105 @@
 import cron from "node-cron";
 import prisma from "./prisma.service";
 
+const formatPeriod = (date: Date): string =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+
 export const startCronJobs = () => {
-  // ตั้งเวลาให้ตื่นมาเช็ก (ตอนนี้ตั้งเป็น "* * * * *" คือเช็กทุกๆ 1 นาทีเพื่อความง่ายตอนเทส)
-  // ถ้าใช้จริงบนโปรดักชันจะแก้เป็น "0 0 * * *" (เที่ยงคืนของทุกวัน)
-  cron.schedule("* * * * *", async () => {
-    console.log("⏰ [Cron] กำลังตรวจสอบ Recurring Transactions...");
+  console.log("⏰ Cron Jobs initialized and ready!");
 
+  cron.schedule("5 0 * * *", async () => {
+    console.log("🔄 Running Recurring Transactions Check...");
     try {
-      const now = new Date();
+      const today = new Date();
 
-      const dueTransactions = await prisma.recurringTransaction.findMany({
+      const dueSubscriptions = await prisma.recurringTransaction.findMany({
         where: {
+          nextRun: { lte: today },
           isActive: true,
-          nextRun: { lte: now },
         },
       });
 
-      if (dueTransactions.length === 0) {
-        return;
-      }
-
-      for (const rt of dueTransactions) {
+      for (const sub of dueSubscriptions) {
         await prisma.transaction.create({
           data: {
-            userId: rt.userId,
-            title: `[Auto] ${rt.title}`,
-            amount: rt.amount,
-            type: rt.type,
-            categoryId: rt.categoryId || "OTHER",
-            date: now,
+            userId: sub.userId,
+            categoryId: sub.categoryId ?? undefined,
+            title: sub.title ?? "Recurring expense",
+            amount: sub.amount,
+            type: sub.type,
+            note: "Subscription (Auto-generated)",
+            date: today,
           },
         });
 
-        let nextRun = new Date(rt.nextRun);
-        if (rt.frequency === "DAILY") nextRun.setDate(nextRun.getDate() + 1);
-        if (rt.frequency === "WEEKLY") nextRun.setDate(nextRun.getDate() + 7);
-        if (rt.frequency === "MONTHLY")
-          nextRun.setMonth(nextRun.getMonth() + 1);
-        if (rt.frequency === "YEARLY")
-          nextRun.setFullYear(nextRun.getFullYear() + 1);
+        const nextDate = new Date(sub.nextRun);
+        if (sub.frequency === "MONTHLY") {
+          nextDate.setMonth(nextDate.getMonth() + 1);
+        } else if (sub.frequency === "YEARLY") {
+          nextDate.setFullYear(nextDate.getFullYear() + 1);
+        } else if (sub.frequency === "WEEKLY") {
+          nextDate.setDate(nextDate.getDate() + 7);
+        } else if (sub.frequency === "DAILY") {
+          nextDate.setDate(nextDate.getDate() + 1);
+        }
 
         await prisma.recurringTransaction.update({
-          where: { id: rt.id },
-          data: { nextRun },
+          where: { id: sub.id },
+          data: { nextRun: nextDate },
         });
-
-        console.log(
-          `✅ จ่ายอัตโนมัติ: ${rt.title} | รอบถัดไป: ${nextRun.toISOString()}`,
-        );
       }
+
+      console.log(
+        `✅ Processed ${dueSubscriptions.length} recurring transactions.`,
+      );
     } catch (error) {
-      console.error("❌ เกิดข้อผิดพลาดใน Cron Job:", error);
+      console.error("❌ Error running recurring transactions cron:", error);
     }
   });
 
-  console.log("🕰️ Cron Job System Started!");
+  cron.schedule("10 0 1 * *", async () => {
+    console.log("📊 Running Budget Auto-Renew Check...");
+    try {
+      const today = new Date();
+      const lastMonthPeriod = formatPeriod(
+        new Date(today.getFullYear(), today.getMonth() - 1, 1),
+      );
+      const thisMonthPeriod = formatPeriod(
+        new Date(today.getFullYear(), today.getMonth(), 1),
+      );
+
+      const lastMonthBudgets = await prisma.budget.findMany({
+        where: {
+          period: lastMonthPeriod,
+          isAutoRenew: true,
+        },
+      });
+
+      for (const budget of lastMonthBudgets) {
+        const existingBudget = await prisma.budget.findFirst({
+          where: {
+            userId: budget.userId,
+            categoryId: budget.categoryId,
+            period: thisMonthPeriod,
+          },
+        });
+
+        if (!existingBudget) {
+          await prisma.budget.create({
+            data: {
+              userId: budget.userId,
+              categoryId: budget.categoryId,
+              amount: budget.amount,
+              period: thisMonthPeriod,
+              isAutoRenew: true,
+            },
+          });
+        }
+      }
+
+      console.log(`✅ Auto-renewed ${lastMonthBudgets.length} budgets.`);
+    } catch (error) {
+      console.error("❌ Error running budget auto-renew cron:", error);
+    }
+  });
 };

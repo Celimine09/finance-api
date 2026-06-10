@@ -1,34 +1,71 @@
-import { Frequency, TransactionType } from "@prisma/client";
 import prisma from "./prisma.service";
+import { Frequency, TransactionType } from "@prisma/client";
 
-interface CreateRecurringDTO {
+export const createRecurring = async (data: {
+  userId: string;
+  categoryId: string;
   title: string;
   amount: number;
   type: TransactionType;
-  category?: string;
+  note?: string;
   frequency: Frequency;
-}
-
-export const createRecurringTask = async (
-  userId: string,
-  data: CreateRecurringDTO,
-) => {
-  const nextRun = new Date();
-  if (data.frequency === "DAILY") nextRun.setDate(nextRun.getDate() + 1);
-  if (data.frequency === "WEEKLY") nextRun.setDate(nextRun.getDate() + 7);
-  if (data.frequency === "MONTHLY") nextRun.setMonth(nextRun.getMonth() + 1);
-  if (data.frequency === "YEARLY")
-    nextRun.setFullYear(nextRun.getFullYear() + 1);
-
+  nextRun: Date;
+}) => {
   return await prisma.recurringTransaction.create({
-    data: {
-      userId,
-      title: data.title,
-      amount: data.amount,
-      type: data.type,
-      ...(data.category ? { categoryId: data.category } : {}),
-      frequency: data.frequency,
-      nextRun,
+    data,
+  });
+};
+
+export const getRecurringByUser = async (userId: string) => {
+  return await prisma.recurringTransaction.findMany({
+    where: { userId },
+    include: {
+      category: {
+        select: { name: true, color: true },
+      },
     },
+    orderBy: [{ nextRun: "asc" }, { createdAt: "asc" }],
+  });
+};
+
+export const updateRecurring = async (
+  id: string,
+  userId: string,
+  data: Partial<{
+    title: string;
+    amount: number;
+    type: TransactionType;
+    categoryId: string;
+    note: string;
+    frequency: Frequency;
+    nextRun: Date;
+    isActive: boolean;
+  }>,
+) => {
+  const existing = await prisma.recurringTransaction.findFirst({
+    where: { id, userId },
+  });
+
+  if (!existing) {
+    throw new Error("NOT_FOUND_OR_UNAUTHORIZED");
+  }
+
+  return await prisma.recurringTransaction.update({
+    where: { id },
+    data,
+  });
+};
+
+export const deleteRecurring = async (id: string, userId: string) => {
+  const existing = await prisma.recurringTransaction.findFirst({
+    where: { id, userId },
+  });
+
+  if (!existing) {
+    throw new Error("NOT_FOUND_OR_UNAUTHORIZED");
+  }
+
+  return await prisma.recurringTransaction.delete({
+    where: { id },
   });
 };

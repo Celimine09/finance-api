@@ -19,7 +19,7 @@ export const createUser = async (data: Prisma.UserCreateInput) => {
 export const registerUser = async (data: Prisma.UserCreateInput) => {
   const existingUser = await findUserByEmail(data.email);
   if (existingUser) {
-    throw new Error("EMAIL_ALREADY_EXISTS"); // ปา Error ไปให้ Controller รับช่วงต่อ
+    throw new Error("EMAIL_ALREADY_EXISTS");
   }
 
   const hashedPassword = await Bun.password.hash(data.password, {
@@ -30,6 +30,7 @@ export const registerUser = async (data: Prisma.UserCreateInput) => {
   return await createUser({
     email: data.email,
     name: data.name,
+    surname: data.surname,
     password: hashedPassword,
   });
 };
@@ -45,12 +46,18 @@ export const loginUser = async (email: string, passwordRaw: string) => {
   }
 
   const secret = process.env.JWT_SECRET || "default_secret";
-  const token = jwt.sign({ id: user.id, email: user.email }, secret, {
-    expiresIn: "1d",
+  const refreshSecret = process.env.JWT_REFRESH_SECRET || "refresh_secret";
+
+  const accessToken = jwt.sign({ id: user.id, email: user.email }, secret, {
+    expiresIn: "15m",
+  });
+  const refreshToken = jwt.sign({ id: user.id }, refreshSecret, {
+    expiresIn: "7d",
   });
 
   return {
-    token,
+    accessToken,
+    refreshToken,
     user: {
       id: user.id,
       email: user.email,
@@ -92,7 +99,23 @@ export const getUserProfile = async (userId: string) => {
       id: true,
       email: true,
       name: true,
+      surname: true,
       createdAt: true,
     },
   });
+};
+
+export const refreshAccessToken = async (currentRefreshToken: string) => {
+  try {
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || "refresh_secret";
+    const secret = process.env.JWT_SECRET || "default_secret";
+    const decoded = jwt.verify(currentRefreshToken, refreshSecret) as any;
+    const newAccessToken = jwt.sign({ id: decoded.id }, secret, {
+      expiresIn: "15m",
+    });
+
+    return newAccessToken;
+  } catch (error) {
+    throw new Error("INVALID_REFRESH_TOKEN");
+  }
 };

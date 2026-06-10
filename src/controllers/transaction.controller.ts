@@ -1,7 +1,6 @@
 import { type Request, type Response } from "express";
 import * as TransactionService from "../services/transaction.service";
 import prisma from "../services/prisma.service";
-import { createRecurringTask } from "../services/recurring.service";
 
 export const getTransactions = async (req: Request, res: Response) => {
   try {
@@ -182,30 +181,5 @@ export const getCategorySummary = async (req: Request, res: Response) => {
       status: "error",
       message: "Internal server error",
     });
-  }
-};
-
-export const createRecurringTransaction = async (
-  req: Request,
-  res: Response,
-) => {
-  try {
-    const userId = (req as any).user?.id;
-    if (!userId || typeof userId !== "string") {
-      return res.status(400).json({
-        status: "error",
-        message: "User ID is required and must be a string",
-      });
-    }
-    const recurringTask = await createRecurringTask(userId, req.body);
-
-    res.status(201).json({
-      status: "success",
-      message: "ตั้งค่ารายการอัตโนมัติสำเร็จ",
-      data: recurringTask,
-    });
-  } catch (error) {
-    console.error("Error creating recurring transaction:", error);
-    res.status(500).json({ status: "error", message: "Internal server error" });
   }
 };

@@ -8,12 +8,29 @@ export const registerUser = async (
 ): Promise<any> => {
   try {
     const validatedData = req.body;
+    const newUser = await UserService.registerUser(validatedData as any);
 
-    await UserService.registerUser(validatedData as any);
+    const secret = process.env.JWT_SECRET || "default_secret";
+    const token = jwt.sign({ id: newUser.id, email: newUser.email }, secret, {
+      expiresIn: "1d",
+    });
 
-    res
-      .status(201)
-      .json({ status: "success", message: "User registered successfully" });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    res.status(201).json({
+      status: "success",
+      message: "User registered and logged in successfully",
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        surname: newUser.surname,
+      },
+    });
   } catch (error: any) {
     if (error?.message === "EMAIL_ALREADY_EXISTS") {
       return res
@@ -31,10 +48,23 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
     const { email, password } = req.body;
     const result = await UserService.loginUser(email, password);
 
+    res.cookie("accessToken", result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     res.status(200).json({
       status: "success",
       message: "Login successful",
-      token: result.token,
       user: result.user,
     });
   } catch (error: any) {
@@ -87,5 +117,38 @@ export const getProfile = async (req: Request, res: Response) => {
     res
       .status(400)
       .json({ status: "error", message: "Could not fetch profile" });
+  }
+};
+
+export const refreshToken = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
+  try {
+    const currentRefreshToken = req.cookies.refreshToken;
+
+    if (!currentRefreshToken) {
+      return res.status(401).json({ message: "No refresh token provided" });
+    }
+
+    const newAccessToken =
+      await UserService.refreshAccessToken(currentRefreshToken);
+
+    res.cookie("accessToken", newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.status(200).json({ message: "Token refreshed successfully" });
+  } catch (error: any) {
+    if (error.message === "INVALID_REFRESH_TOKEN") {
+      return res
+        .status(403)
+        .json({ message: "Invalid or expired refresh token" });
+    }
+    console.error("Refresh Token Error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

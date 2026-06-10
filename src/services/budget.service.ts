@@ -2,7 +2,12 @@ import prisma from "./prisma.service";
 
 export const createBudget = async (
   userId: string,
-  data: { categoryId: string; amount: number; period: string },
+  data: {
+    categoryId: string;
+    amount: number;
+    period: string;
+    isAutoRenew?: boolean;
+  },
 ) => {
   const existingBudget = await prisma.budget.findFirst({
     where: { userId, categoryId: data.categoryId, period: data.period },
@@ -18,6 +23,7 @@ export const createBudget = async (
       categoryId: data.categoryId,
       amount: data.amount,
       period: data.period,
+      isAutoRenew: data.isAutoRenew ?? false,
     },
   });
 };
@@ -71,7 +77,7 @@ export const getBudgetsWithUsage = async (userId: string, period: string) => {
 export const updateBudget = async (
   userId: string,
   budgetId: string,
-  data: { amount: number },
+  data: { amount?: number; isAutoRenew?: boolean },
 ) => {
   const existingBudget = await prisma.budget.findFirst({
     where: { id: budgetId, userId },
@@ -83,6 +89,9 @@ export const updateBudget = async (
 
   return await prisma.budget.update({
     where: { id: budgetId },
-    data: { amount: data.amount },
+    data: {
+      amount: data.amount,
+      isAutoRenew: data.isAutoRenew,
+    },
   });
 };

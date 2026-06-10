@@ -6,7 +6,6 @@ import {
   updateTransactionSchema,
 } from "../validators/transaction.validator";
 import { validate } from "../middlewares/validate.middleware";
-import { createRecurringTransaction } from "../controllers/transaction.controller";
 
 const router = Router();
 
@@ -170,7 +169,5 @@ router.get(
   requireAuth,
   TransactionController.getCategorySummary,
 );
-
-router.post("/recurring", requireAuth, createRecurringTransaction);
 
 export default router;

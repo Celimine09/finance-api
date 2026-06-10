@@ -10,6 +10,7 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   name      String?
+  surname   String?
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -73,8 +74,9 @@ model Budget {
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  isAutoRenew Boolean  @default(false)
 
-  @@unique([userId, categoryId, period]) // เปลี่ยนมาป้องกันการสร้าง Budget ซ้ำหมวดในเดือนเดียวกัน
+  @@unique([userId, categoryId, period])
 }
 
 model SavingsGoal {
@@ -99,18 +101,19 @@ enum Frequency {
 }
 
 model RecurringTransaction {
-  id         String          @id @default(uuid())
-  title      String
-  amount     Float
-  type       TransactionType
-  frequency  Frequency
-  nextRun    DateTime
-  isActive   Boolean         @default(true)
-  createdAt  DateTime        @default(now())
+  id          String   @id @default(uuid())
+  userId      String
+  categoryId  String
+  title       String
+  amount      Float
+  type        TransactionType
+  note        String?
+  frequency   Frequency @default(MONTHLY)
+  nextRun     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-
-  userId     String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [categoryId], references: [id])
 }

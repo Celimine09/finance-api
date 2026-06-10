@@ -6,21 +6,12 @@ export const requireAuth = (
   res: Response,
   next: NextFunction,
 ): any => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({
-      status: "error",
-      message: "Unauthorized: No token provided",
-    });
-  }
-
-  const token = authHeader.split(" ")[1];
+  const token = req.cookies.accessToken;
 
   if (!token) {
     return res.status(401).json({
       status: "error",
-      message: "Unauthorized: Token is missing",
+      message: "Unauthorized: No token provided",
     });
   }
 

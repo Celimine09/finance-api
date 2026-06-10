@@ -14,6 +14,9 @@ const registerPayload = z.object({
   name: z
     .string({ message: "Name is required" })
     .min(2, { message: "Name must be at least 2 characters long" }),
+  surname: z
+    .string({ message: "Surname is required" })
+    .min(2, { message: "Surname must be at least 2 characters long" }),
 });
 
 export const registerSchema = z.object({ body: registerPayload });

@@ -3,7 +3,7 @@ import * as UserController from "../controllers/user.controller";
 import { validate } from "../middlewares/validate.middleware";
 import { loginSchema, registerSchema } from "../validators/auth.validator";
 import { requireAuth } from "../middlewares/auth.middleware";
-import { loginUser } from "../controllers/user.controller";
+import { loginUser, refreshToken } from "../controllers/user.controller";
 
 const router = Router();
 
@@ -23,12 +23,15 @@ const router = Router();
  *               email:
  *                 type: string
  *                 example: "nine.dev@test.com"
- *               name:
- *                 type: string
- *                 example: "Nine"
  *               password:
  *                 type: string
  *                 example: "securepassword123"
+ *               name:
+ *                 type: string
+ *                 example: "Nine"
+ *               surname:
+ *                 type: string
+ *                 example: "Developer"
  *     responses:
  *       201:
  *         description: สมัครสมาชิกสำเร็จ
@@ -113,5 +116,24 @@ router.patch("/profile", requireAuth, UserController.updateUser);
  *         description: ไม่ได้รับอนุญาต (Unauthorized) หรือ Token หมดอายุ
  */
 router.get("/profile", requireAuth, UserController.getProfile);
+
+/**
+ * @swagger
+ * /api/users/refresh:
+ *   post:
+ *     summary: ต่ออายุ Access Token (Auto-refresh)
+ *     description: ใช้สำหรับขอ Access Token ใบใหม่ โดยระบบจะอ่าน Refresh Token จาก HttpOnly Cookie อัตโนมัติ (ไม่ต้องแนบ Bearer Token)
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: ต่ออายุ Token สำเร็จ (ได้รับ Cookie accessToken ใบใหม่)
+ *       401:
+ *         description: ไม่พบ Refresh Token ใน Cookie (ต้องให้ User ล็อกอินใหม่)
+ *       403:
+ *         description: Refresh Token ไม่ถูกต้อง หรือหมดอายุไปแล้ว (ต้องให้ User ล็อกอินใหม่)
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/refresh", refreshToken);
 
 export default router;
