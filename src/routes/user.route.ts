@@ -3,7 +3,11 @@ import * as UserController from "../controllers/user.controller";
 import { validate } from "../middlewares/validate.middleware";
 import { loginSchema, registerSchema } from "../validators/auth.validator";
 import { requireAuth } from "../middlewares/auth.middleware";
-import { loginUser, refreshToken } from "../controllers/user.controller";
+import {
+  loginUser,
+  logout,
+  refreshToken,
+} from "../controllers/user.controller";
 
 const router = Router();
 
@@ -66,6 +70,8 @@ router.post("/register", validate(registerSchema), UserController.registerUser);
  *         description: อีเมลหรือรหัสผ่านไม่ถูกต้อง
  */
 router.post("/login", validate(loginSchema), UserController.loginUser);
+
+router.post("/logout", logout);
 
 /**
  * @swagger

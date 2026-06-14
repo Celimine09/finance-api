@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import prisma from "./prisma.service";
 import jwt from "jsonwebtoken";
+import { type Request, type Response } from "express";
 
 export const findUserByEmail = async (email: string) => {
   return await prisma.user.findUnique({
@@ -22,6 +23,10 @@ export const registerUser = async (data: Prisma.UserCreateInput) => {
     throw new Error("EMAIL_ALREADY_EXISTS");
   }
 
+  if (!data.password) {
+    throw new Error("PASSWORD_REQUIRED");
+  }
+
   const hashedPassword = await Bun.password.hash(data.password, {
     algorithm: "bcrypt",
     cost: 10,
@@ -37,7 +42,7 @@ export const registerUser = async (data: Prisma.UserCreateInput) => {
 
 export const loginUser = async (email: string, passwordRaw: string) => {
   const user = await findUserByEmail(email);
-  if (!user) {
+  if (!user || !user.password) {
     throw new Error("INVALID_CREDENTIALS");
   }
   const isPasswordMatch = await Bun.password.verify(passwordRaw, user.password);
@@ -64,6 +69,36 @@ export const loginUser = async (email: string, passwordRaw: string) => {
       name: user.name,
     },
   };
+};
+
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Logged out successfully (Cookies cleared)",
+    });
+  } catch (error) {
+    console.error("Logout Error:", error);
+    res.status(500).json({ status: "error", message: "Internal server error" });
+  }
 };
 
 export const updateUser = async (

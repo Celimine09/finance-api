@@ -78,6 +78,18 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    res.status(200).json({
+      status: "success",
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.error("Logout Error:", error);
+    res.status(500).json({ status: "error", message: "Internal server error" });
+  }
+};
+
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const userId = (req as { user?: { id: string } }).user?.id;
