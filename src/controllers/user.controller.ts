@@ -11,15 +11,37 @@ export const registerUser = async (
     const newUser = await UserService.registerUser(validatedData as any);
 
     const secret = process.env.JWT_SECRET || "default_secret";
-    const token = jwt.sign({ id: newUser.id, email: newUser.email }, secret, {
-      expiresIn: "1d",
+    const refreshSecret =
+      process.env.JWT_REFRESH_SECRET || "default_refresh_secret";
+
+    const accessToken = jwt.sign(
+      { id: newUser.id, email: newUser.email },
+      secret,
+      {
+        expiresIn: "15m",
+      },
+    );
+
+    const refreshToken = jwt.sign(
+      { id: newUser.id, email: newUser.email },
+      refreshSecret,
+      {
+        expiresIn: "7d",
+      },
+    );
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: true, // 🌟
+      sameSite: "none", // 🌟
+      maxAge: 15 * 60 * 1000,
     });
 
-    res.cookie("token", token, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000,
+      secure: true, // 🌟
+      sameSite: "none", // 🌟
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(201).json({
       status: "success",
@@ -50,15 +72,15 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
 
     res.cookie("accessToken", result.accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       maxAge: 15 * 60 * 1000,
     });
 
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -148,8 +170,8 @@ export const refreshToken = async (
 
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       maxAge: 15 * 60 * 1000,
     });
 
